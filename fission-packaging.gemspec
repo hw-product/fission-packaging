@@ -10,6 +10,7 @@ Gem::Specification.new do |s|
   s.description = 'Fission Packaging'
   s.require_path = 'lib'
   s.add_dependency 'rawr'
+  s.add_dependency 'rake'
   s.add_dependency 'gli'
   s.executables << 'make-package'
   s.files = Dir['**/*']
