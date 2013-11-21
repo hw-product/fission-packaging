@@ -17,14 +17,11 @@ command :clean do |c|
   require 'fileutils'
   c.action do |global_options, options, args|
     puts 'Cleaning... '
-    %w(package src).each do |dir|
-      print "  * removing directory #{dir} ... "
-      FileUtils.rm_rf(dir)
+    %w(package src/lib src/main.rb build_configuration.rb).each do |path|
+      print "  * removing #{path} ... "
+      FileUtils.rm_rf(path)
       puts 'done'
     end
-    print "  * removing build_configuration.rb ... "
-    FileUtils.rm('build_configuration.rb')
-    puts 'done'
     puts 'Cleaning complete!'
   end
 end
