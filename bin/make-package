@@ -34,73 +34,89 @@ command :build do |c|
   c.desc 'Use custom gem source for fission gems'
   c.flag :source
 
+  c.desc 'Use provided Gemfile'
+  c.flag :gemfile
   c.action do |global_options, options, args|
     unless(RUBY_PLATFORM == 'java')
       puts 'ERROR: Use jruby for build!'
       exit -1
     end
     product = args.first
+    unless(product)
+      puts 'ERROR: Specify a product name'
+      exit -1
+    end
     puts "Building #{product}..."
     if(product == 'fission')
       puts 'This should build all the things'
       raise 'not done yet'
     else
+      unless(File.exists?('lib/java/jruby-complete.jar'))
+        print '  * downloading jruby jar... '
+        FileUtils.mkdir_p('lib/java')
+        %x{rake rawr:get:current-stable-jruby}
+        puts 'done'
+      end
       print '  * initial src/ population... '
       FileUtils.mkdir_p('src')
-      File.open('src/Gemfile', 'w') do |file|
-        file.puts "source 'https://rubygems.org'"
-        file.puts "source '#{options[:source] || FISSION_GEM_SOURCE}'"
-        file.puts "gem '#{product}'"
+      if(options[:gemfile])
+        FileUtils.cp(options[:gemfile], 'src/Gemfile')
+      else
+        File.open('src/Gemfile', 'w') do |file|
+          file.puts "source 'https://rubygems.org'"
+          file.puts "source '#{options[:source] || FISSION_GEM_SOURCE}'"
+          file.puts "gem '#{product}'"
+        end
       end
       puts 'complete'
       print '  * vendoring gems... '
-      Dir.chdir('src') do
-        unless(system('bundle install 2>&1 > /dev/null'))
+      %x{cp .bundle/config .bundle/config.bak}
+      Bundler.with_clean_env do
+        unless(system('bundle install --gemfile ./src/Gemfile --path ./lib 2>&1'))
           puts 'FAILED'
           exit -1
         end
       end
+      %x{mv .bundle/config.bak .bundle/config}
       puts 'done'
       print '  * compacting vendored gems... '
-      Dir.chdir('src') do
-        %x{lib/jruby/1.9/bundler/gems/* lib/jruby/1.9/gems/}
-        %w(bin bundler cache doc specifications).each do |leaf|
-          FileUtils.rm_rf(
-            File.join('lib/jruby/1.9', leaf)
-          )
-        end
+      %x{mv src/lib/jruby/1.9/bundler/gems/* src/lib/jruby/1.9/gems/}
+      %w(bin cache doc specifications).each do |leaf|
+        FileUtils.rm_rf(
+          File.join('src/lib/jruby/1.9', leaf)
+        )
       end
+      FileUtils.rm_f('src/Gemfile')
+      FileUtils.rm_f('src/Gemfile.lock')
+      FileUtils.rm_rf('src/.bundle')
       puts 'done'
       print '  * compiling ruby files to java class files... '
-      Dir.chdir('src') do
-        unless(system('jrubyc lib/'))
-          puts 'FAILED'
-          exit -1
-        end
+      unless(system('jrubyc src/lib/'))
+        puts 'FAILED'
+        exit -1
       end
       puts 'done'
       print '  * removing any cruft files... '
       Dir.glob('src/lib/**/*').each do |path|
-        next if path.end_with?('.class')
+        next if path.end_with?('.class') || !File.file?(path)
         FileUtils.rm(path)
       end
       puts 'done'
       class_files = Dir.glob('src/lib/**/*.class')
       print '  * writing main.rb file... '
-      Dir.chdir('src') do
-        libs = Dir.glob('lib/jruby/1.9/gems/*').map do |path|
-          File.join('src', path, 'lib')
-        end
-        File.open('main.rb', 'w') do |file|
-          file.puts "#{libs.inspect}.each{|path| $LOAD_PATH.unshift(path)}"
-          file.puts "require 'fission'"
-        end
+      libs = Dir.glob('src/lib/jruby/1.9/gems/*').map do |path|
+        File.join(path, 'lib')
+      end
+      File.open('src/main.rb', 'w') do |file|
+        file.puts "#{libs.inspect}.each{|path| $LOAD_PATH.unshift(path)}"
+        file.puts "require 'fission'"
       end
       puts 'done'
       print '  * writing build_configuration.rb ... '
+      product_name = product.sub('fission-', '')
       content = [
         "configuration{|c|",
-        "c.project_name = '#{product.split('-').slice(1, 10).join('-')}'",
+        "c.project_name = '#{product_name}'",
         "c.output_dir = 'package'",
         "c.executable_type = 'console'",
         "c.main_ruby_file = 'main'",
