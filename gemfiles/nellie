@@ -1,0 +1,5 @@
+source 'https://rubygems.org'
+
+gem 'carnivore', git: 'git@github.com:carnivore-rb/carnivore.git', branch: 'develop'
+gem 'fission', git: 'git@github.com:heavywater/fission.git', branch: 'develop'
+gem 'fission-nellie', git: 'git@github.com:heavywater/fission-nellie.git', branch: 'develop'
