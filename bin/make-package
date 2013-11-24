@@ -19,7 +19,7 @@ command :jrubyjar do |c|
   c.flag :version
   c.action do |g_o, options, args|
     uri = "http://jruby.org.s3.amazonaws.com/downloads/#{options[:version]}/jruby-complete-#{options[:version]}.jar"
-    puts 'Downloading jruby-complete.jar (version: #{options[:version]})!'
+    puts "Downloading jruby-complete.jar (version: #{options[:version]})!"
     FileUtils.mkdir_p('lib/java')
     exec("wget -O lib/java/jruby-complete.jar '#{uri}'")
   end
