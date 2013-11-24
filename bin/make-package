@@ -12,12 +12,25 @@ program_desc 'Generate a fission package'
 
 version Fission::Packaging::VERSION.version
 
+desc 'Fetch jruby-complete jar'
+command :jrubyjar do |c|
+  c.desc 'Set version to download'
+  c.default_value '1.7.8'
+  c.flag :version
+  c.action do |g_o, options, args|
+    uri = "http://jruby.org.s3.amazonaws.com/downloads/#{options[:version]}/jruby-complete-#{options[:version]}.jar"
+    puts 'Downloading jruby-complete.jar (version: #{options[:version]})!'
+    FileUtils.mkdir_p('lib/java')
+    exec("wget -O lib/java/jruby-complete.jar '#{uri}'")
+  end
+end
+
 desc 'Remove all generated files'
 command :clean do |c|
   require 'fileutils'
   c.action do |global_options, options, args|
     puts 'Cleaning... '
-    %w(package src/lib src/main.rb build_configuration.rb).each do |path|
+    %w(package src tmp).each do |path|
       print "  * removing #{path} ... "
       FileUtils.rm_rf(path)
       puts 'done'
@@ -31,8 +44,14 @@ command :build do |c|
   c.desc 'Use custom gem source for fission gems'
   c.flag :source
 
+  c.desc 'Be noisy'
+  c.switch :verbose
+
   c.desc 'Use provided Gemfile'
   c.flag :gemfile
+
+  c.desc 'Compile fission only'
+  c.switch :fission
   c.action do |global_options, options, args|
     unless(RUBY_PLATFORM == 'java')
       puts 'ERROR: Use jruby for build!'
@@ -49,10 +68,8 @@ command :build do |c|
       raise 'not done yet'
     else
       unless(File.exists?('lib/java/jruby-complete.jar'))
-        print '  * downloading jruby jar... '
-        FileUtils.mkdir_p('lib/java')
-        %x{rake rawr:get:current-stable-jruby}
-        puts 'done'
+        puts 'ERROR: Fetch the jruby-complete.jar (jrubyjar command)'
+        exit -1
       end
       print '  * initial src/ population... '
       FileUtils.mkdir_p('src')
@@ -69,7 +86,7 @@ command :build do |c|
       print '  * vendoring gems... '
       %x{cp .bundle/config .bundle/config.bak}
       Bundler.with_clean_env do
-        unless(system('bundle install --gemfile ./src/Gemfile --path ./lib 2>&1'))
+        unless(system("bundle install --gemfile ./src/Gemfile --path ./lib #{'2>&1 > /dev/null' unless options[:verbose]}"))
           puts 'FAILED'
           exit -1
         end
@@ -77,63 +94,80 @@ command :build do |c|
       %x{mv .bundle/config.bak .bundle/config}
       puts 'done'
       print '  * compacting vendored gems... '
-      %x{mv src/lib/jruby/1.9/bundler/gems/* src/lib/jruby/1.9/gems/}
-      %w(bin cache doc specifications).each do |leaf|
-        FileUtils.rm_rf(
-          File.join('src/lib/jruby/1.9', leaf)
-        )
+      Dir.glob('src/lib/jruby/1.9/bundler/gems/*').each do |path|
+        next unless File.directory?(path)
+        unless(system("mv #{path} src/lib/jruby/1.9/gems/"))
+          puts 'FAILED'
+          exit -1
+        end
       end
-      FileUtils.rm_f('src/Gemfile')
-      FileUtils.rm_f('src/Gemfile.lock')
-      FileUtils.rm_rf('src/.bundle')
+      puts 'done'
+      print '  * removing test and example files... '
+      %w(test tests example examples).each do |key|
+        Dir.glob("src/lib/**/#{key}/**/*.rb").each do |junk|
+          File.delete(junk)
+        end
+      end
       puts 'done'
       print '  * compiling ruby files to java class files... '
-      unless(system('jrubyc src/lib/'))
+      compile_path = options[:fission] ? 'src/lib/jruby/1.9/gems/fission*' : 'src/lib/jruby/1.9/gems'
+      unless(system("jrubyc #{compile_path} #{'2>&1 > /dev/null' unless options[:verbose]}"))
         puts 'FAILED'
         exit -1
       end
       puts 'done'
       print '  * removing any cruft files... '
-      Dir.glob('src/lib/**/*').each do |path|
-        next if path.end_with?('.class') || !File.file?(path)
-        FileUtils.rm(path)
+      Dir.glob('src/lib/jruby/1.9/gems/**/*').each do |path|
+        if(options[:fission])
+          next if !File.file?(path) ||
+            path.end_with?('.class') ||
+            (path.end_with?('.rb') && !File.exists?(path.sub('.rb', '.class')))
+        else
+          next if path.end_with?('.class') || !File.file?(path)
+        end
+        FileUtils.rm(path) if path.end_with?('.rb') || path.end_with?('.java')
       end
       puts 'done'
-      class_files = Dir.glob('src/lib/**/*.class')
-      print '  * writing main.rb file... '
-      libs = Dir.glob('src/lib/jruby/1.9/gems/*').map do |path|
-        File.join(path, 'lib')
-      end
-      File.open('src/main.rb', 'w') do |file|
-        file.puts "#{libs.inspect}.each{|path| $LOAD_PATH.unshift(path)}"
-        file.puts "require 'fission'"
-      end
-      puts 'done'
-      print '  * writing build_configuration.rb ... '
-      product_name = product.sub('fission-', '')
-      content = [
-        "configuration{|c|",
-        "c.project_name = '#{product_name}'",
-        "c.output_dir = 'package'",
-        "c.executable_type = 'console'",
-        "c.main_ruby_file = 'main'",
-        "c.source_dirs = ['src']",
-        "c.files_to_copy = #{class_files.inspect}",
-        "c.source_jvm_version = #{ENV_JAVA['java.specification.version']}",
-        "c.target_jvm_version = #{ENV_JAVA['java.specification.version']}",
-        "}"
-      ]
-      File.open('build_configuration.rb', 'w') do |file|
-        file.puts content.join("\n")
-      end
-      puts 'done'
-      print '  * STAND BACK! BUILDING JAR... '
-      unless(system('rake rawr:jar 2>&1 > /dev/null'))
-        puts 'FAILED! BOOOOO'
+      FileUtils.mkdir_p('tmp')
+      print '  * unpacking jruby-complete.jar file... '
+      unless(system('unzip -q lib/java/jruby-complete.jar -d tmp/'))
+        puts 'FAILED!'
         exit -1
       end
-      puts 'done!'
-      puts 'Packaging complete. Check out the package directory for jar!'
+      puts 'done'
+      print '  * import custom files... '
+      FileUtils.mkdir_p('tmp/META-INF/jruby.home/fission')
+      unless(system('mv src/lib/jruby/1.9/gems/* tmp/META-INF/jruby.home/fission/'))
+        puts 'FAILED!'
+        exit -1
+      end
+      puts 'done'
+      print "  * packing up #{product} jar file... "
+      FileUtils.mkdir_p('package')
+      unless(system("cd tmp && zip -q ../package/#{product}-inprogress.jar -r * && cd .."))
+        puts 'FAILED!'
+        exit -1
+      end
+      puts 'done'
+      print '  * resetting jar bootstrap... '
+      paths = Dir.glob('tmp/META-INF/jruby.home/fission/*').map do |path|
+        next unless File.directory?(path)
+        File.join('fission', File.basename(path), 'lib')
+      end.compact
+      File.open('package/jar-bootstrap.rb', 'w') do |file|
+        file.puts "base = $LOAD_PATH.detect{|x|x.include?('META-INF') && x.include?('jruby.home')}.scan(%r{^.*/jruby\.home}).flatten.first"
+        file.puts "#{paths.inspect}.each{|path| $: << File.join(base, path) }"
+        file.puts 'require "fission"'
+      end
+      unless(system("cd package && jar ufe #{product}-inprogress.jar org.jruby.JarBootstrapMain jar-bootstrap.rb && cd .."))
+        puts 'FAILED!'
+        exit -1
+      end
+      FileUtils.rm_f("package/jar-bootstrap.rb")
+      system("mv package/#{product}-inprogress.jar package/#{product}.jar")
+      puts 'done'
+      puts "Build of #{product} is complete! - package/#{product}.jar"
+      puts "Yay!"
     end
   end
 end
