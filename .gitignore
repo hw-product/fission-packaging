@@ -2,8 +2,7 @@
 !.gitignore
 *.lock
 lib/java
-build_configuration.rb
 package*
-src/lib*
-src/main.rb
+src*
+tmp*
 vendor
