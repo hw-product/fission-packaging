@@ -156,7 +156,7 @@ command :build do |c|
       end.compact
       File.open('package/jar-bootstrap.rb', 'w') do |file|
         file.puts "base = $LOAD_PATH.detect{|x|x.include?('META-INF') && x.include?('jruby.home')}.scan(%r{^.*/jruby\.home}).flatten.first"
-        file.puts "#{paths.inspect}.each{|path| $: << File.join(base, path) }"
+        file.puts "#{paths.inspect}.each{|path| $:.unshift File.join(base, path) }"
         file.puts 'require "fission"'
       end
       unless(system("cd package && jar ufe #{product}-inprogress.jar org.jruby.JarBootstrapMain jar-bootstrap.rb && cd .."))
