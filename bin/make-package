@@ -82,14 +82,14 @@ command :build do |c|
       end
       puts 'complete'
       print '  * vendoring gems... '
-      %x{cp .bundle/config .bundle/config.bak}
+      %x{cp .bundle/config .bundle/config.bak} if File.exists?(".bundle/config")
       Bundler.with_clean_env do
         unless(system("bundle install --gemfile ./src/Gemfile --path ./lib #{'2>&1 > /dev/null' unless options[:verbose]}"))
           puts 'FAILED'
           exit -1
         end
       end
-      %x{mv .bundle/config.bak .bundle/config}
+      %x{mv .bundle/config.bak .bundle/config} if File.exists?(".bundle/config.bak")
       puts 'done'
       print '  * compacting vendored gems... '
       Dir.glob('src/lib/jruby/1.9/bundler/gems/*').each do |path|
