@@ -164,7 +164,7 @@ command :build do |c|
       FileUtils.rm_f("package/jar-bootstrap.rb")
       system("mv package/#{product}-inprogress.jar package/#{product}.jar")
       puts 'done'
-      puts "Build of #{product} is complete! - package/#{product}.jar"
+      puts "Build of #{product} is complete! - package/#{product}-#{Time.now.to_i}.jar"
       puts "Yay!"
     end
   end
