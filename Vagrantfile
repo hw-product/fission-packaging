@@ -28,25 +28,34 @@ if ! command -v bundle >/dev/null ; then
   gem install bundler
 fi
 
-set -x
-cd /vagrant
-bundle install
-if [ ! -f /vagrant/lib/java/jruby-complete.jar ] ; then
-  bundle exec make-package jrubyjar
-fi
-bundle exec make-package clean
-bundle exec make-package build #{package} --gemfile gemfiles/#{package} --verbose
+sudo -i -H -u vagrant bash -c '
+cd /vagrant; \
+bundle install; \
+if [ ! -f /vagrant/lib/java/jruby-complete.jar ] ; then \
+  bundle exec make-package jrubyjar; \
+fi; \
+bundle exec make-package clean;
+'
+
+echo
+echo
+echo "---> Node preparation complete. To finish the build:
+echo "     * vagrant ssh"
+echo "     * cd /vagrant"
+echo "     * bundle exec make-package build #{package} --gemfile gemfiles/#{package} --verbose"
+echo
 SETUP
 
 Vagrant.configure("2") do |config|
   config.vm.box = "opscode-ubuntu-12.04"
   config.vm.provision :shell, :inline => setup
+  config.ssh.forward_agent = true
 
   config.vm.provider "virtualbox" do |p|
-    p.customize ["modifyvm", :id, "--memory", "2048"]
+    p.customize ["modifyvm", :id, "--memory", "3072"]
   end
 
   config.vm.provider "vmware_fusion" do |p|
-    p.vmx["memsize"] = "2048"
+    p.vmx["memsize"] = "3072"
   end
 end
