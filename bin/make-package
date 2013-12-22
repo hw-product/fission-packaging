@@ -2,7 +2,28 @@
 require 'gli'
 require 'fission-packaging/version'
 
-FISSION_GEM_SOURCE = 'https://fission-gems.hw-ops.com'
+# Bug fix patching
+class Gem::Version
+  def self.create input
+    if self === input then # check yourself before you wreck
+      # yourself
+      input
+    elsif input.nil? then
+      nil
+    else
+      new input
+    end
+  end
+end
+
+FISSION_GEM_SOURCE = nil #'https://fission-gems.hw-ops.com'
+FISSION_SRC_DIR = 'src'
+
+def action(doing)
+  print "#{doing}... "
+  yield
+  puts 'done'
+end
 
 include GLI::App
 
@@ -10,16 +31,113 @@ program_desc 'Generate a fission package'
 
 version Fission::Packaging::VERSION.version
 
-desc 'Fetch jruby-complete jar'
-command :jrubyjar do |c|
-  c.desc 'Set version to download'
-  c.default_value '1.7.8'
-  c.flag :version
-  c.action do |g_o, options, args|
-    uri = "http://jruby.org.s3.amazonaws.com/downloads/#{options[:version]}/jruby-complete-#{options[:version]}.jar"
-    puts "Downloading jruby-complete.jar (version: #{options[:version]})!"
-    FileUtils.mkdir_p('lib/java')
-    exec("wget -O lib/java/jruby-complete.jar '#{uri}'")
+desc 'Build PRODUCT'
+arg_name 'PRODUCT', :required
+command :build do |c|
+  c.flag :source, :desc => 'Use custom gem source for fission gems'
+  c.switch :verbose, :desc => 'Be noisy'
+  c.flag :gemfile, :desc => 'Use provided Gemfile'
+  c.flag :carnivore, :desc => 'Include carnivore sources', :type => Array
+  c.switch :cleanup, :desc => 'Automatically clean up', :default_value => true
+
+  c.action do |global_options, options, args|
+    require 'fileutils'
+    require 'warbler'
+
+    product = args.first
+
+    if(options[:cleanup])
+      FileUtils.rm_rf(FISSION_SRC_DIR)
+    end
+    unless(File.directory?(File.join(FISSION_SRC_DIR, 'config')))
+      FileUtils.mkdir_p(File.join(FISSION_SRC_DIR, 'config'))
+      FileUtils.mkdir_p(File.join(FISSION_SRC_DIR, 'bin'))
+    end
+    action 'Generating gemfile' do
+      if(options[:gemfile])
+        gemfile = File.readlines(options[:gemfile])
+      else
+        gemfile = ["source 'https://rubygems.org'"]
+      end
+      gemfile.push("source '#{FISSION_GEM_SOURCE}'") if FISSION_GEM_SOURCE
+      gemfile.push("source '#{options[:source]}'") if options[:source]
+      if(options[:carnivore])
+        options[:carnivore].each do |carnivore_src|
+          unless(carnivore_src.start_with?('carnivore'))
+            carnivore_src = "carnivore-#{carnivore_src}"
+          end
+          gemfile.push "gem '#{carnivore_src}'"
+        end
+      end
+      File.open(File.join(FISSION_SRC_DIR, 'Gemfile'), 'w') do |file|
+        file.puts gemfile.join("\n")
+      end
+    end
+    action 'Generating package config file' do
+      warble = ['Warbler.framework_detection = false', 'Warbler::Config.new do |c|']
+      warble << 'c.features = %w(compiled)'
+      warble << "c.jar_name = \"#{product}-\#{Time.now.to_i}\""
+      warble << 'c.bundler = false'
+      warble << 'c.compiled_ruby_files = FileList["vendor/**/fission*/**/*.rb"]'
+      warble << 'end'
+      File.open(File.join(FISSION_SRC_DIR, 'config', 'warble.rb'), 'w') do |file|
+        file.puts warble.join("\n")
+      end
+    end
+    action 'Installing executable' do
+      binfile = [
+        '#!/usr/bin/env ruby',
+        'require "bundler"',
+        'Bundler.setup',
+        'require "fission"',
+        'require "fission/runner"'
+      ]
+      File.open(File.join(FISSION_SRC_DIR, 'bin', product), 'w') do |file|
+        file.puts binfile.join("\n")
+      end
+    end
+    action 'Installing package bundle' do
+      Dir.chdir(FISSION_SRC_DIR) do
+        Bundler.with_clean_env do
+          begin
+            Bundler.ui.instance_eval do
+              def quiet?
+                true
+              end
+            end
+            Bundler.clear_gemspec_cache
+            Bundler.instance_variable_set(:@load, nil)
+            Bundler.instance_variable_set(:@definition, nil)
+            Bundler.instance_variable_set(:@setup, nil)
+            Bundler.instance_variable_set(:@bundle_path, nil)
+            Bundler.instance_variable_set(:@configured, nil)
+            Bundler.send(:configure_gem_home_and_path)
+            Bundler.settings[:path] = 'vendor'
+            Bundler.configure
+            definition = Bundler.definition
+            definition.validate_ruby!
+            Bundler::Installer.install(FISSION_SRC_DIR, definition, {})
+          rescue => e
+            puts "ACK: #{e}: #{e.backtrace.join("\n")}"
+            exit
+          end
+        end
+      end
+    end
+    action 'Creating package' do
+      Dir.chdir(FISSION_SRC_DIR) do
+        Warbler::Task.new
+        Rake::Task[:jar].invoke
+      end
+    end
+    jar = Dir.glob(File.join(FISSION_SRC_DIR, '*.jar')).first
+    action 'Cleaning up' do
+      FileUtils.mkdir_p('package')
+      FileUtils.mv(jar, 'package')
+      FileUtils.rm_rf(FISSION_SRC_DIR)
+    end
+    puts "YAY! \o/"
+    puts "Package build complete (#{product}): #{File.join('package', File.basename(jar))}"
   end
 end
 
@@ -34,140 +152,6 @@ command :clean do |c|
       puts 'done'
     end
     puts 'Cleaning complete!'
-  end
-end
-
-arg_name 'PRODUCT', :required
-command :build do |c|
-  c.desc 'Use custom gem source for fission gems'
-  c.flag :source
-
-  c.desc 'Be noisy'
-  c.switch :verbose
-
-  c.desc 'Use provided Gemfile'
-  c.flag :gemfile
-
-  c.desc 'Compile fission only'
-  c.switch :fission
-  c.action do |global_options, options, args|
-    unless(RUBY_PLATFORM == 'java')
-      puts 'ERROR: Use jruby for build!'
-      exit -1
-    end
-    product = args.first
-    unless(product)
-      puts 'ERROR: Specify a product name'
-      exit -1
-    end
-    puts "Building #{product}..."
-    if(product == 'fission')
-      puts 'This should build all the things'
-      raise 'not done yet'
-    else
-      unless(File.exists?('lib/java/jruby-complete.jar'))
-        puts 'ERROR: Fetch the jruby-complete.jar (jrubyjar command)'
-        exit -1
-      end
-      print '  * initial src/ population... '
-      FileUtils.mkdir_p('src')
-      if(options[:gemfile])
-        FileUtils.cp(options[:gemfile], 'src/Gemfile')
-      else
-        File.open('src/Gemfile', 'w') do |file|
-          file.puts "source 'https://rubygems.org'"
-          file.puts "source '#{options[:source] || FISSION_GEM_SOURCE}'"
-          file.puts "gem '#{product}'"
-        end
-      end
-      puts 'complete'
-      print '  * vendoring gems... '
-      %x{cp .bundle/config .bundle/config.bak} if File.exists?(".bundle/config")
-      Bundler.with_clean_env do
-        unless(system("bundle install --gemfile ./src/Gemfile --path ./lib #{'2>&1 > /dev/null' unless options[:verbose]}"))
-          puts 'FAILED'
-          exit -1
-        end
-      end
-      %x{mv .bundle/config.bak .bundle/config} if File.exists?(".bundle/config.bak")
-      puts 'done'
-      print '  * compacting vendored gems... '
-      Dir.glob('src/lib/jruby/1.9/bundler/gems/*').each do |path|
-        next unless File.directory?(path)
-        unless(system("mv #{path} src/lib/jruby/1.9/gems/"))
-          puts 'FAILED'
-          exit -1
-        end
-      end
-      puts 'done'
-      print '  * removing test and example files... '
-      %w(test tests example examples).each do |key|
-        Dir.glob("src/lib/**/#{key}/**/*.rb").each do |junk|
-          File.delete(junk)
-        end
-      end
-      puts 'done'
-      print '  * compiling ruby files to java class files... '
-      compile_path = options[:fission] ? 'src/lib/jruby/1.9/gems/fission*' : 'src/lib/jruby/1.9/gems'
-      unless(system("jrubyc #{compile_path} #{'2>&1 > /dev/null' unless options[:verbose]}"))
-        puts 'FAILED'
-        exit -1
-      end
-      puts 'done'
-      print '  * removing any cruft files... '
-      Dir.glob('src/lib/jruby/1.9/gems/**/*').each do |path|
-        if(options[:fission])
-          next if !File.file?(path) ||
-            path.end_with?('.class') ||
-            (path.end_with?('.rb') && !File.exists?(path.sub('.rb', '.class')))
-        else
-          next if path.end_with?('.class') || !File.file?(path)
-        end
-        FileUtils.rm(path) if path.end_with?('.rb') || path.end_with?('.java')
-      end
-      puts 'done'
-      FileUtils.mkdir_p('tmp')
-      print '  * unpacking jruby-complete.jar file... '
-      unless(system('unzip -q lib/java/jruby-complete.jar -d tmp/'))
-        puts 'FAILED!'
-        exit -1
-      end
-      puts 'done'
-      print '  * import custom files... '
-      FileUtils.mkdir_p('tmp/META-INF/jruby.home/fission')
-      unless(system('mv src/lib/jruby/1.9/gems/* tmp/META-INF/jruby.home/fission/'))
-        puts 'FAILED!'
-        exit -1
-      end
-      puts 'done'
-      print "  * packing up #{product} jar file... "
-      FileUtils.mkdir_p('package')
-      unless(system("cd tmp && zip -q ../package/#{product}-inprogress.jar -r * && cd .."))
-        puts 'FAILED!'
-        exit -1
-      end
-      puts 'done'
-      print '  * resetting jar bootstrap... '
-      paths = Dir.glob('tmp/META-INF/jruby.home/fission/*').map do |path|
-        next unless File.directory?(path)
-        File.join('fission', File.basename(path), 'lib')
-      end.compact
-      File.open('package/jar-bootstrap.rb', 'w') do |file|
-        file.puts "base = $LOAD_PATH.detect{|x|x.include?('META-INF') && x.include?('jruby.home')}.scan(%r{^.*/jruby\.home}).flatten.first"
-        file.puts "#{paths.inspect}.each{|path| $:.unshift File.join(base, path) }"
-        file.puts 'require "fission"'
-      end
-      unless(system("cd package && jar ufe #{product}-inprogress.jar org.jruby.JarBootstrapMain jar-bootstrap.rb && cd .."))
-        puts 'FAILED!'
-        exit -1
-      end
-      FileUtils.rm_f("package/jar-bootstrap.rb")
-      package_file_name = "package/#{product}-#{Time.now.to_i}.jar"
-      system("mv package/#{product}-inprogress.jar #{package_file_name}")
-      puts 'done'
-      puts "Build of #{product} is complete! - #{package_file_name}"
-      puts "Yay!"
-    end
   end
 end
 
