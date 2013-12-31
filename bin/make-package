@@ -136,7 +136,7 @@ command :build do |c|
       FileUtils.mv(jar, 'package')
       FileUtils.rm_rf(FISSION_SRC_DIR)
     end
-    puts "YAY! \o/"
+    puts 'YAY! \o/'
     puts "Package build complete (#{product}): #{File.join('package', File.basename(jar))}"
   end
 end
