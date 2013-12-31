@@ -2,12 +2,14 @@ source 'https://rubygems.org'
 
 gem 'fog', '1.18.0'
 
+source 'https://rubygems.org'
+
 gem 'carnivore', git: 'git@github.com:carnivore-rb/carnivore.git', branch: 'develop'
 gem 'carnivore-http', git: 'git@github.com:carnivore-rb/carnivore-http.git', branch: 'develop'
-gem 'carnivore-sqs', git: 'git@github.com:carnivore-rb/carnivore-sqs.git'
+gem 'carnivore-sqs', git: 'git@github.com:carnivore-rb/carnivore-sqs.git', branch: 'develop'
 gem 'carnivore-actor', git: 'git@github.com:carnivore-rb/carnivore-actor.git', branch: 'develop'
-gem 'octokit', path: '/home/spox/Projects/chrisroberts/octokit.rb'
-gem 'elecksee', path: '/home/spox/Projects/chrisroberts/elecksee' #git: 'git://github.com/chrisroberts/elecksee.git', branch: 'develop'
+gem 'octokit'
+gem 'elecksee', git: 'git://github.com/chrisroberts/elecksee.git', branch: 'develop'
 gem 'risky', git: 'git://github.com/chrisroberts/risky.git', branch: 'updates'
 
 if(RUBY_PLATFORM == 'java')
@@ -20,7 +22,7 @@ end
   rest-api router validator
 ).each do |fission_library|
   if(ENV['FISSION_LOCALS'] == 'true')
-    gem "fission-#{fission_library}", path: "../../fission-#{fission_library}"
+    gem "fission-#{fission_library}", path: "../fission-#{fission_library}"
   else
     gem "fission-#{fission_library}", git: "git@github.com:heavywater/fission-#{fission_library}.git", branch: 'develop'
   end
