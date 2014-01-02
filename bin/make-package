@@ -75,10 +75,10 @@ command :build do |c|
     end
     action 'Generating package config file' do
       warble = ['Warbler.framework_detection = false', 'Warbler::Config.new do |c|']
-      warble << 'c.features = %w(compiled)'
+      warble << 'c.features = []' #%w(compiled)'
       warble << "c.jar_name = \"#{product}-\#{Time.now.to_i}\""
-      warble << 'c.bundler = false'
-      warble << 'c.compiled_ruby_files = FileList["vendor/**/fission*/**/*.rb"]'
+      warble << 'c.bundler = true'
+#      warble << 'c.compiled_ruby_files = FileList["vendor/**/fission*/**/*.rb"]'
       warble << 'end'
       File.open(File.join(FISSION_SRC_DIR, 'config', 'warble.rb'), 'w') do |file|
         file.puts warble.join("\n")
@@ -87,8 +87,8 @@ command :build do |c|
     action 'Installing executable' do
       binfile = [
         '#!/usr/bin/env ruby',
-        'require "bundler"',
-        'Bundler.setup',
+        'Dir.glob(File.expand_path("../../../gems/*", __FILE__)).each{|path| $:.unshift File.join(path, "lib")}',
+        'Dir.glob(File.expand_path("../../../bundler/gems/*", __FILE__)).each{|path|  $:.unshift File.join(path, "lib")}',
         'require "fission"',
         'require "fission/runner"'
       ]
@@ -96,7 +96,8 @@ command :build do |c|
         file.puts binfile.join("\n")
       end
     end
-    action 'Installing package bundle' do
+
+    action 'Installing package bundle and build' do
       Dir.chdir(FISSION_SRC_DIR) do
         Bundler.with_clean_env do
           begin
@@ -112,11 +113,13 @@ command :build do |c|
             Bundler.instance_variable_set(:@bundle_path, nil)
             Bundler.instance_variable_set(:@configured, nil)
             Bundler.send(:configure_gem_home_and_path)
-            Bundler.settings[:path] = 'vendor'
+#            Bundler.settings[:path] = 'vendor'
             Bundler.configure
             definition = Bundler.definition
             definition.validate_ruby!
             Bundler::Installer.install(FISSION_SRC_DIR, definition, {})
+            Warbler::Task.new
+            Rake::Task[:jar].invoke
           rescue => e
             puts "ACK: #{e}: #{e.backtrace.join("\n")}"
             exit
@@ -124,13 +127,9 @@ command :build do |c|
         end
       end
     end
-    action 'Creating package' do
-      Dir.chdir(FISSION_SRC_DIR) do
-        Warbler::Task.new
-        Rake::Task[:jar].invoke
-      end
-    end
+
     jar = Dir.glob(File.join(FISSION_SRC_DIR, '*.jar')).first
+
     action 'Cleaning up' do
       FileUtils.mkdir_p('package')
       FileUtils.mv(jar, 'package')
