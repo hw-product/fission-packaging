@@ -74,11 +74,14 @@ command :build do |c|
       end
     end
     action 'Generating package config file' do
-      warble = ['Warbler.framework_detection = false', 'Warbler::Config.new do |c|']
-      warble << 'c.features = []' #%w(compiled)'
+      warble = ['Warbler.framework_detection = false']
+      warble << 'class ProxyProc < Proc; def method_missing(*args, &block); self.call.send(*args, &block); end; def respond_to?(m); call.send(:respond_to?, m); end; end'
+      warble << 'Warbler::Config.new do |c|'
+      # NOTE: File we need compiled can't be done here annoyingly enough
+      warble << 'c.features = [] #%w(compiled)'
       warble << "c.jar_name = \"#{product}-\#{Time.now.to_i}\""
       warble << 'c.bundler = true'
-#      warble << 'c.compiled_ruby_files = FileList["vendor/**/fission*/**/*.rb"]'
+#      warble << 'c.compiled_ruby_files = ProxyProc.new{ x = FileList["**/fission*/**/*.rb"]; puts x.inspect; x}'
       warble << 'end'
       File.open(File.join(FISSION_SRC_DIR, 'config', 'warble.rb'), 'w') do |file|
         file.puts warble.join("\n")
@@ -135,6 +138,26 @@ command :build do |c|
       FileUtils.mv(jar, 'package')
       FileUtils.rm_rf(FISSION_SRC_DIR)
     end
+
+    jar = File.join('package', File.basename(jar))
+
+    action 'Compiling fission specific libraries' do
+      raise 'Failed to unpack new jar!' unless system("unzip -q #{jar} -d package")
+      FileUtils.rm jar
+      fission_files = Dir.glob('package/bundler/**/fission*/**/lib/**/*').map(&:to_s)
+      fission_files.delete_if{|f| !f.end_with?('.rb')}
+      raise 'Fission specific java compilation failed!' unless system("jrubyc #{fission_files.join(' ')}")
+      fission_files.each do |path|
+        File.open(path, 'w'){|f| f.puts "load __FILE__.sub(/\.rb$/, '.class')"}
+      end
+      Dir.chdir('package') do
+        raise 'Failed to re-compact jar!' unless system("zip -q -r #{File.basename(jar)} .")
+      end
+      Dir.glob(File.join('package', "*")).each do |path|
+        FileUtils.rm_rf(path) unless File.expand_path(path) == File.expand_path(jar)
+      end
+    end
+
     puts 'YAY! \o/'
     puts "Package build complete (#{product}): #{File.join('package', File.basename(jar))}"
   end
