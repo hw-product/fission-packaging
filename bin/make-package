@@ -18,6 +18,7 @@ end
 
 FISSION_GEM_SOURCE = nil #'https://fission-gems.hw-ops.com'
 FISSION_SRC_DIR = 'src'
+FISSION_PKG_DIR = 'package'
 
 def action(doing)
   print "#{doing}... "
@@ -36,6 +37,7 @@ arg_name 'PRODUCT', :required
 command :build do |c|
   c.flag :source, :desc => 'Use custom gem source for fission gems'
   c.switch :verbose, :desc => 'Be noisy'
+  c.switch :compile, :desc => 'Compile fission specific files', :default_value => true
   c.flag :gemfile, :desc => 'Use provided Gemfile'
   c.flag :carnivore, :desc => 'Include carnivore sources', :type => Array
   c.switch :cleanup, :desc => 'Automatically clean up', :default_value => true
@@ -124,7 +126,7 @@ command :build do |c|
             Warbler::Task.new
             Rake::Task[:jar].invoke
           rescue => e
-            puts "ACK: #{e}: #{e.backtrace.join("\n")}"
+            puts "Unexpected exception encountered: #{e}: #{e.backtrace.join("\n")}"
             exit
           end
         end
@@ -134,32 +136,34 @@ command :build do |c|
     jar = Dir.glob(File.join(FISSION_SRC_DIR, '*.jar')).first
 
     action 'Cleaning up' do
-      FileUtils.mkdir_p('package')
-      FileUtils.mv(jar, 'package')
+      FileUtils.mkdir_p(FISSION_PKG_DIR)
+      FileUtils.mv(jar, FISSION_PKG_DIR)
       FileUtils.rm_rf(FISSION_SRC_DIR)
     end
 
-    jar = File.join('package', File.basename(jar))
+    jar = File.join(FISSION_PKG_DIR, File.basename(jar))
 
-    action 'Compiling fission specific libraries' do
-      raise 'Failed to unpack new jar!' unless system("unzip -q #{jar} -d package")
-      FileUtils.rm jar
-      fission_files = Dir.glob('package/bundler/**/fission*/**/lib/**/*').map(&:to_s)
-      fission_files.delete_if{|f| !f.end_with?('.rb')}
-      raise 'Fission specific java compilation failed!' unless system("jrubyc #{fission_files.join(' ')}")
-      fission_files.each do |path|
-        File.open(path, 'w'){|f| f.puts "load __FILE__.sub(/\.rb$/, '.class')"}
-      end
-      Dir.chdir('package') do
-        raise 'Failed to re-compact jar!' unless system("zip -q -r #{File.basename(jar)} .")
-      end
-      Dir.glob(File.join('package', "*")).each do |path|
-        FileUtils.rm_rf(path) unless File.expand_path(path) == File.expand_path(jar)
+    if(options[:compile])
+      action 'Compiling fission specific libraries' do
+        raise 'Failed to unpack new jar!' unless system("unzip -q #{jar} -d #{FISSION_PKG_DIR}")
+        FileUtils.rm jar
+        fission_files = Dir.glob(File.join(FISSION_PKG_DIR, 'bundler/**/fission*/**/lib/**/*')).map(&:to_s)
+        fission_files.delete_if{|f| !f.end_with?('.rb')}
+        raise 'Fission specific java compilation failed!' unless system("jrubyc #{fission_files.join(' ')}")
+        fission_files.each do |path|
+          File.open(path, 'w'){|f| f.puts "load __FILE__.sub(/\.rb$/, '.class')"}
+        end
+        Dir.chdir(FISSION_PKG_DIR) do
+          raise 'Failed to re-compact jar!' unless system("zip -q -r #{File.basename(jar)} .")
+        end
+        Dir.glob(File.join(FISSION_PKG_DIR, "*")).each do |path|
+          FileUtils.rm_rf(path) unless File.expand_path(path) == File.expand_path(jar)
+        end
       end
     end
 
     puts 'YAY! \o/'
-    puts "Package build complete (#{product}): #{File.join('package', File.basename(jar))}"
+    puts "Package build complete (#{product}): #{File.join(FISSION_PKG_DIR, File.basename(jar))}"
   end
 end
 
