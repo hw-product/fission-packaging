@@ -154,7 +154,9 @@ command :build do |c|
           File.open(path, 'w'){|f| f.puts "load __FILE__.sub(/\.rb$/, '.class')"}
         end
         Dir.chdir(FISSION_PKG_DIR) do
-          raise 'Failed to re-compact jar!' unless system("zip -q -r #{File.basename(jar)} .")
+          package_files = Dir.glob('**/**/*')
+          jar = Warbler::Jar.new
+          jar.create_jar(jar, package_files)
         end
         Dir.glob(File.join(FISSION_PKG_DIR, "*")).each do |path|
           FileUtils.rm_rf(path) unless File.expand_path(path) == File.expand_path(jar)
