@@ -49,7 +49,9 @@ command :build do |c|
     product = args.first
 
     if(options[:cleanup])
-      FileUtils.rm_rf(FISSION_SRC_DIR)
+      [FISSION_SRC_DIR, FISSION_PKG_DIR].each do |dir|
+        FileUtils.rm_rf(dir)
+      end
     end
     unless(File.directory?(File.join(FISSION_SRC_DIR, 'config')))
       FileUtils.mkdir_p(File.join(FISSION_SRC_DIR, 'config'))
@@ -154,10 +156,13 @@ command :build do |c|
           File.open(path, 'w'){|f| f.puts "load __FILE__.sub(/\.rb$/, '.class')"}
         end
         Dir.chdir(FISSION_PKG_DIR) do
-          package_files = Dir.glob('**/**/*')
-          jar = Warbler::Jar.new
-          jar.create_jar(jar, package_files)
+          raise 'Failed to repack jar!' unless system("zip -q -r #{File.basename(jar)} .")
         end
+=begin
+        package_files = Hash[*(Dir.glob(File.join(FISSION_PKG_DIR, '**/**/*')).map{|i|[i,i.sub(FISSION_PKG_DIR, '')]}.flatten)]
+        new_jar = Warbler::Jar.new
+        new_jar.create_jar(jar, package_files)
+=end
         Dir.glob(File.join(FISSION_PKG_DIR, "*")).each do |path|
           FileUtils.rm_rf(path) unless File.expand_path(path) == File.expand_path(jar)
         end
