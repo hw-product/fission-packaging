@@ -9,3 +9,5 @@ gem 'fission-nellie', git: 'git@github.com:heavywater/fission-nellie.git', branc
 gem 'fission-rest-api', git: 'git@github.com:heavywater/fission-rest-api.git', branch: 'develop'
 gem 'fission-code-fetcher', git: 'git@github.com:heavywater/fission-code-fetcher.git', branch: 'develop'
 gem 'fission-assets', git: 'git@github.com:heavywater/fission-assets.git', branch: 'develop'
+gem 'fission-router', git: 'git@github.com:heavywater/fission-router.git', branch: 'develop'
+gem 'fission-callbacks', git: 'git@github.com:heavywater/fission-callbacks.git', branch: 'develop'
