@@ -155,6 +155,9 @@ command :build do |c|
         fission_files.each do |path|
           File.open(path, 'w'){|f| f.puts "load __FILE__.sub(/\.rb$/, '.class')"}
         end
+        File.open(File.join(FISSION_PKG_DIR, 'META-INF', 'init.rb'), 'w') do |file|
+          file.puts "require 'rubygems'"
+        end
         Dir.chdir(FISSION_PKG_DIR) do
           raise 'Failed to repack jar!' unless system("zip -q -r #{File.basename(jar)} .")
         end
