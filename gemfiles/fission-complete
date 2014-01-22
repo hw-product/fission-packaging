@@ -1,6 +1,10 @@
 source 'https://rubygems.org'
 
+# Peg fog due to SQS broken signatures
 gem 'fog', '1.18.0'
+
+# Include stripe for remote account lookup support in validator
+gem 'stripe'
 
 gem 'carnivore', git: 'git@github.com:carnivore-rb/carnivore.git', branch: 'develop'
 gem 'carnivore-http', git: 'git@github.com:carnivore-rb/carnivore-http.git', branch: 'develop'
