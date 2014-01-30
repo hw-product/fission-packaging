@@ -1,0 +1,76 @@
+#!/usr/bin/env ruby
+require 'gli'
+require 'fog'
+require 'fission-packaging/version'
+
+MEG = 1024 * 1024
+MEG_CHUNK = 10
+
+def action(doing)
+  print "#{doing}... "
+  result = yield
+  puts 'done'
+  result
+end
+
+include GLI::App
+
+program_desc 'Upload a fission package'
+
+version Fission::Packaging::VERSION.version
+
+desc 'Upload PACKAGE'
+arg_name 'PACKAGE', :required
+command :put do |c|
+  c.flag :aws_id, :desc => 'AWS Access Key ID'
+  c.flag :aws_secret, :desc => 'AWS Secret Key ID'
+  c.flag :aws_region, :desc => 'AWS Region'
+  c.flag :bucket, :desc => 'AWS Bucket', :default_value => 'assets.hw-ops.com'
+  c.flag :prefix, :desc => 'Asset key prefix'
+  c.flag :expiry, :desc => 'Number of seconds asset should be accessible', :default_value => 2592000
+
+  c.action do |global_options, options, args|
+    begin
+      options = Hash[options.map{|k,v|[k.to_sym,v]}]
+      options[:aws_id] ||= ENV['AWS_ACCESS_KEY_ID']
+      options[:aws_secret] ||= ENV['AWS_SECRET_ACCESS_KEY']
+      options[:aws_region] ||= ENV['AWS_REGION']
+
+      s3 = Fog::Storage::AWS.new(
+        :aws_access_key_id => options[:aws_id],
+        :aws_secret_access_key => options[:aws_secret],
+        :region => options[:aws_region],
+        :path_style => true
+      )
+
+      file = File.open(args.first, 'r')
+      key = File.join(*[options[:prefix], File.basename(file.path)].compact)
+      puts "Upload: #{file.path} -> s3://#{File.join(options[:bucket], key)}"
+
+      if((parts = file.size / (MEG * MEG_CHUNK)) > 0)
+        parts += 1
+        puts " - spliting into #{MEG_CHUNK}M parts (#{parts} parts - #{sprintf('%.3g', file.size / MEG.to_f)}M total)"
+        init = s3.initiate_multipart_upload(options[:bucket], key)
+        uploads = parts.times.map do |i|
+          upload_chunk = file.read(MEG * MEG_CHUNK)
+          size = sprintf('%.3g', upload_chunk.size / MEG)
+          action " >> Uploading #{args.first} (#{i+1}/#{parts})[#{size}M]" do
+            s3.upload_part(options[:bucket], key, init.body['UploadId'], i+1, upload_chunk).headers['ETag']
+          end
+        end
+        s3.complete_multipart_upload(options[:bucket], key, init.body['UploadId'], uploads)
+      else
+        action " >> Uploading #{args.first}" do
+          s3.put_object(options[:bucket], key, file)
+        end
+      end
+
+      puts "\nURL: #{s3.get_object_url(options[:bucket], key, Time.now.to_i + options[:expiry].to_i)}"
+    rescue => e
+      puts "#{e.class}: #{e}\n#{e.backtrace.join("\n")}"
+      raise
+    end
+  end
+end
+
+exit run(ARGV)
