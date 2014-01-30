@@ -10,7 +10,9 @@ Gem::Specification.new do |s|
   s.description = 'Fission Packaging'
   s.require_path = 'lib'
   s.add_dependency 'gli'
+  s.add_dependency 'fog'
   s.add_dependency 'warbler'
   s.executables << 'make-package'
+  s.executables << 'upload-package'
   s.files = Dir['**/*']
 end
