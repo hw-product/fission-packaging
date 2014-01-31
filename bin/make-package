@@ -1,5 +1,6 @@
 #!/usr/bin/env ruby
 require 'gli'
+require 'zip'
 require 'fission-packaging/version'
 
 # Bug fix patching
@@ -49,10 +50,9 @@ command :build do |c|
     product = args.first
 
     if(options[:cleanup])
-      [FISSION_SRC_DIR, FISSION_PKG_DIR].each do |dir|
-        FileUtils.rm_rf(dir)
-      end
+      FileUtils.rm_rf(FISSION_SRC_DIR)
     end
+
     unless(File.directory?(File.join(FISSION_SRC_DIR, 'config')))
       FileUtils.mkdir_p(File.join(FISSION_SRC_DIR, 'config'))
       FileUtils.mkdir_p(File.join(FISSION_SRC_DIR, 'bin'))
@@ -85,7 +85,6 @@ command :build do |c|
       warble << 'c.features = [] #%w(compiled)'
       warble << "c.jar_name = \"#{product}-\#{Time.now.to_i}\""
       warble << 'c.bundler = true'
-#      warble << 'c.compiled_ruby_files = ProxyProc.new{ x = FileList["**/fission*/**/*.rb"]; puts x.inspect; x}'
       warble << 'end'
       File.open(File.join(FISSION_SRC_DIR, 'config', 'warble.rb'), 'w') do |file|
         file.puts warble.join("\n")
@@ -147,28 +146,45 @@ command :build do |c|
 
     if(options[:compile])
       action 'Compiling fission specific libraries' do
-        raise 'Failed to unpack new jar!' unless system("unzip -q #{jar} -d #{FISSION_PKG_DIR}")
+        require 'tmpdir'
+        destination = Dir.mktmpdir
+        FileUtils.rm_rf(destination)
+        destination = File.join(Dir.pwd, destination)
+        FileUtils.mkdir_p(destination)
+        Zip::File.new(jar).each do |entry|
+          new_dest = File.join(destination, entry.name)
+          entry.extract(new_dest)
+        end
         FileUtils.rm jar
-        fission_files = Dir.glob(File.join(FISSION_PKG_DIR, 'bundler/**/fission*/**/lib/**/*')).map(&:to_s)
+        fission_files = Dir.glob(File.join(destination, 'bundler/**/fission*/**/lib/**/*')).map(&:to_s)
         fission_files.delete_if{|f| !f.end_with?('.rb')}
-        raise 'Fission specific java compilation failed!' unless system("jrubyc #{fission_files.join(' ')}")
+        raise 'Fission specific java compilation failed!' unless system("jrubyc -d #{fission_files.join(' ')}")
         fission_files.each do |path|
           File.open(path, 'w'){|f| f.puts "load __FILE__.sub(/\.rb$/, '.class')"}
         end
-        File.open(File.join(FISSION_PKG_DIR, 'META-INF', 'init.rb'), 'w') do |file|
+        File.open(File.join(destination, 'META-INF', 'init.rb'), 'w') do |file|
           file.puts "require 'rubygems'"
         end
-        Dir.chdir(FISSION_PKG_DIR) do
-          raise 'Failed to repack jar!' unless system("zip -q -r #{File.basename(jar)} .")
+        entries = Hash[
+          Dir.glob(File.join(destination, '**', '*')).map do |path|
+            [path.sub(%r{#{Regexp.escape(destination)}/?}, ''), path]
+          end
+        ]
+        Zip::File.open(jar, Zip::File::CREATE) do |zipfile|
+          entries.keys.sort.each do |entry|
+            path = entries[entry]
+            if(File.directory?(path))
+              zipfile.mkdir(entry.dup)
+            elsif(File.symlink?(path))
+              zipfile.add(entry, path)
+            else
+              zipfile.get_output_stream(entry) do |content|
+                content << File.read(path)
+              end
+            end
+          end
         end
-=begin
-        package_files = Hash[*(Dir.glob(File.join(FISSION_PKG_DIR, '**/**/*')).map{|i|[i,i.sub(FISSION_PKG_DIR, '')]}.flatten)]
-        new_jar = Warbler::Jar.new
-        new_jar.create_jar(jar, package_files)
-=end
-        Dir.glob(File.join(FISSION_PKG_DIR, "*")).each do |path|
-          FileUtils.rm_rf(path) unless File.expand_path(path) == File.expand_path(jar)
-        end
+        FileUtils.rm_rf(destination)
       end
     end
 

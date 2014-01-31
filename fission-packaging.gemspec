@@ -12,6 +12,7 @@ Gem::Specification.new do |s|
   s.add_dependency 'gli'
   s.add_dependency 'fog'
   s.add_dependency 'warbler'
+  s.add_dependency 'rubyzip'
   s.executables << 'make-package'
   s.executables << 'upload-package'
   s.files = Dir['**/*']
