@@ -1,7 +1,8 @@
 source 'https://rubygems.org'
 
 # Peg fog due to SQS broken signatures
-gem 'fog', '1.18.0'
+#gem 'fog', '1.18.0'
+gem 'fog', :git => 'git://github.com/chrisroberts/fog', :branch => 'feature/dnsimple-tokenauth'
 
 # Include stripe for remote account lookup support in validator
 gem 'stripe'
@@ -22,6 +23,7 @@ end
   app-jobs assets callbacks code-fetcher data
   finalizers github-release nellie package-builder
   rest-api router validator github-comment mail
+  repository-generator repository-publisher
 ).each do |fission_library|
   if(ENV['FISSION_LOCALS'] == 'true')
     gem "fission-#{fission_library}", path: "../fission-#{fission_library}"
