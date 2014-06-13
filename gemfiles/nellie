@@ -1,6 +1,6 @@
 source 'https://rubygems.org'
 
-gem 'fog', '1.18.0'
+gem 'fog'
 
 gem 'carnivore', git: 'git@github.com:carnivore-rb/carnivore.git', branch: 'develop'
 gem 'carnivore-http', git: 'git@github.com:carnivore-rb/carnivore-http.git', branch: 'develop'
@@ -12,4 +12,8 @@ gem 'fission-rest-api', git: 'git@github.com:heavywater/fission-rest-api.git', b
 gem 'fission-code-fetcher', git: 'git@github.com:heavywater/fission-code-fetcher.git', branch: 'develop'
 gem 'fission-assets', git: 'git@github.com:heavywater/fission-assets.git', branch: 'develop'
 gem 'fission-router', git: 'git@github.com:heavywater/fission-router.git', branch: 'develop'
-gem 'fission-callbacks', git: 'git@github.com:heavywater/fission-callbacks.git', branch: 'develop'
+gem 'fission-mail', git: 'git@github.com:heavywater/fission-mail.git', branch: 'develop'
+
+gem 'fission-nellie-mail-formatter', git: 'git@github.com:heavywater/fission-nellie-mail-formatter.git'
+gem 'fission-nellie-webhook', git: 'git@github.com:heavywater/fission-nellie-webhook.git'
+gem 'fission-webhook', git: 'git@github.com:heavywater/fission-webhook.git'

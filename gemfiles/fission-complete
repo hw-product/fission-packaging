@@ -33,3 +33,5 @@ end
 end
 
 gem 'fission', git: 'git@github.com:heavywater/fission.git', branch: 'develop'
+gem 'reaper', git: 'git@github.com:heavywater/reaper.git', branch: 'develop'
+gem 'http', '~> 0.5.0'
