@@ -1,0 +1,16 @@
+source 'https://rubygems.org'
+
+gem 'fog'
+
+source 'https://fission:8sYl7Bo0ql2OA9OPThUngg@gems.pkgd.io' do
+  gem 'fission'
+  gem 'fission-nellie'
+  gem 'fission-rest-api'
+  gem 'fission-code-fetcher'
+  gem 'fission-assets'
+  gem 'fission-router'
+  gem 'fission-mail'
+  gem 'fission-nellie-mail-formatter'
+  gem 'fission-nellie-webhook'
+  gem 'fission-webhook'
+end
