@@ -157,12 +157,17 @@ command :build do |c|
         end
         FileUtils.rm jar
         fission_files = Dir.glob(File.join(destination, 'bundler/**/fission*/**/lib/**/*')).map(&:to_s)
+        fission_files += Dir.glob(File.join(destination, 'gems/**/fission*/**/lib/**/*')).map(&:to_s)
         fission_files.delete_if{|f| !f.end_with?('.rb')}
-        unless(system("jrubyc #{fission_files.join(' ')}"))
-          raise 'Fission specific java compilation failed!'
-        end
-        fission_files.each do |path|
-          File.open(path, 'w'){|f| f.puts "load __FILE__.sub(/\.rb$/, '.class')"}
+        unless(fission_files.empty?)
+          unless(system("jrubyc #{fission_files.join(' ')}"))
+            raise 'Fission specific java compilation failed!'
+          end
+          fission_files.each do |path|
+            File.open(path, 'w'){|f| f.puts "load __FILE__.sub(/\.rb$/, '.class')"}
+          end
+        else
+          puts 'WARNING: No fission files found!'
         end
         File.open(File.join(destination, 'META-INF', 'init.rb'), 'w') do |file|
           file.puts "require 'rubygems'"
