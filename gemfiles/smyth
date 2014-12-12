@@ -14,3 +14,6 @@ source 'https://fission:8sYl7Bo0ql2OA9OPThUngg@gems.pkgd.io' do
   gem 'fission-nellie-webhook'
   gem 'fission-webhook'
 end
+
+gem 'carnivore-sqs'
+gem 'carnivore-actor'
