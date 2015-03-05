@@ -95,8 +95,7 @@ command :build do |c|
         '#!/usr/bin/env ruby',
         'Dir.glob(File.expand_path("../../../gems/*", __FILE__)).each{|path| $:.unshift File.join(path, "lib")}',
         'Dir.glob(File.expand_path("../../../bundler/gems/*", __FILE__)).each{|path|  $:.unshift File.join(path, "lib")}',
-        'require "fission"',
-        'require "fission/runner"'
+        'eval File.read(Dir.glob(File.expand_path("../../../gems/fission*/bin/fission", __FILE__)).first)'
       ]
       File.open(File.join(FISSION_SRC_DIR, 'bin', product), 'w') do |file|
         file.puts binfile.join("\n")
@@ -123,7 +122,7 @@ command :build do |c|
             Bundler.configure
             definition = Bundler.definition
             definition.validate_ruby!
-            Bundler::Installer.install(FISSION_SRC_DIR, definition, {})
+            Bundler::Installer.install(FISSION_SRC_DIR, definition, 'update' => true, 'standalone' => true)
             Warbler::Task.new
             Rake::Task[:jar].invoke
           rescue => e
