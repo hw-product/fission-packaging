@@ -93,6 +93,7 @@ command :build do |c|
     action 'Installing executable' do
       binfile = [
         '#!/usr/bin/env ruby',
+        '$:.delete_if{|path| path.include?("gem")}',
         'Dir.glob(File.expand_path("../../../gems/*", __FILE__)).each{|path| $:.unshift File.join(path, "lib")}',
         'Dir.glob(File.expand_path("../../../bundler/gems/*", __FILE__)).each{|path|  $:.unshift File.join(path, "lib")}',
         'eval File.read(Dir.glob(File.expand_path("../../../gems/fission*/bin/fission", __FILE__)).first)'
