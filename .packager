@@ -28,8 +28,8 @@ Packager.build do
         'JRUBY_OPTS="--2.0" PATH=/tmp/jruby-1.7.18/bin:$PATH gem install --no-ri --no-rdoc bundler',
         'JRUBY_OPTS="--2.0" PATH=/tmp/jruby-1.7.18/bin:$PATH bundle update',
         'JRUBY_OPTS="--2.0" PATH=/tmp/jruby-1.7.18/bin:$PATH bundle exec make-package build fission --gemfile gemfiles/fission-complete',
-        'mkdir -p $PKG_DIR/opt',
-        'mv package/*.jar $PKG_DIR/opt/fission.jar'
+        'mkdir -p $PKG_DIR/opt/fission',
+        'mv package/*.jar $PKG_DIR/opt/fission/fission.jar'
       ]
     end
   end
