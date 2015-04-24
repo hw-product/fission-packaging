@@ -14,19 +14,16 @@ Packager.build do
       'wget',
       'git'
     ]
-    runtime [
-      'openjdk-7-jre-headless',
-    ]
   end
   build do
-    name 'fission-app'
+    name 'fission'
     template :generic
     commands do
       build [
         'wget -O /tmp/jruby.tar.gz https://s3.amazonaws.com/jruby.org/downloads/1.7.18/jruby-bin-1.7.18.tar.gz',
         'tar -C /tmp -xzf /tmp/jruby.tar.gz',
         'JRUBY_OPTS="--2.0" PATH=/tmp/jruby-1.7.18/bin:$PATH gem install --no-ri --no-rdoc bundler',
-        'JRUBY_OPTS="--2.0" PATH=/tmp/jruby-1.7.18/bin:$PATH bundle update',
+        'JRUBY_OPTS="--2.0" PATH=/tmp/jruby-1.7.18/bin:$PATH bundle install',
         'JRUBY_OPTS="--2.0" PATH=/tmp/jruby-1.7.18/bin:$PATH bundle exec make-package build fission --gemfile gemfiles/fission-complete',
         'mkdir -p $PKG_DIR/opt/fission',
         'mv package/*.jar $PKG_DIR/opt/fission/fission.jar'
