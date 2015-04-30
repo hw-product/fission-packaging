@@ -1,3 +1,17 @@
+source 'https://fission:8sYl7Bo0ql2OA9OPThUngg@gems.pkgd.io' do
+  gem 'fission'
+  gem 'fission-assets'
+  gem 'fission-data'
+  gem 'fission-mail'
+  gem 'fission-nellie'
+  gem 'fission-package-builder'
+  gem 'fission-router'
+  gem 'fission-validator'
+  gem 'fission-woodchuck'
+  gem 'fission-woodchuck-filter'
+  gem 'fission-command-control'
+end
+
 source 'https://rubygems.org' do
 
   # Include stripe for remote account lookup support in validator
@@ -14,18 +28,4 @@ source 'https://rubygems.org' do
   gem 'jackal-slack'
   gem 'jackal-commander'
   gem 'jackal-stacks'
-end
-
-source 'https://fission:8sYl7Bo0ql2OA9OPThUngg@gems.pkgd.io' do
-  gem 'fission'
-  gem 'fission-assets'
-  gem 'fission-data'
-  gem 'fission-mail'
-  gem 'fission-nellie'
-  gem 'fission-package-builder'
-  gem 'fission-router'
-  gem 'fission-validator'
-  gem 'fission-woodchuck'
-  gem 'fission-woodchuck-filter'
-  gem 'fission-command-control'
 end
