@@ -26,7 +26,8 @@ Packager.build do
         'PATH=/tmp/jruby-1.7.18/bin:$PATH bundle install',
         'PATH=/tmp/jruby-1.7.18/bin:$PATH bundle exec make-package build fission --gemfile gemfiles/fission-complete',
         'mkdir -p $PKG_DIR/opt/fission',
-        'mv package/*.jar $PKG_DIR/opt/fission/fission.jar'
+        'mv package/*.jar $PKG_DIR/opt/fission/fission.jar',
+        'chmod 0644 $PKG_DIR/opt/fission/fission.jar'
       ]
     end
   end
