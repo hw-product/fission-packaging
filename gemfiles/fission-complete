@@ -1,11 +1,9 @@
 source 'https://rubygems.org' do
-
-  # Include stripe for remote account lookup support in validator
-  gem 'stripe'
   gem 'carnivore-http'
   gem 'carnivore-nsq'
   gem 'carnivore-actor'
   gem 'carnivore-files'
+  gem 'carnivore-rabbitmq'
   gem 'octokit'
 
   gem 'jackal-code-fetcher'
@@ -17,7 +15,7 @@ source 'https://rubygems.org' do
 end
 
 source 'https://fission:8sYl7Bo0ql2OA9OPThUngg@gems.pkgd.io' do
-  gem 'fission', '0.2.2'
+  gem 'fission', '0.2.4'
   gem 'fission-assets'
   gem 'fission-data'
   gem 'fission-mail'
