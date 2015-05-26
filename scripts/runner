@@ -1,0 +1,28 @@
+#!/usr/bin/env ruby
+
+require 'rubygems'
+
+root = File.dirname(__FILE__)
+paths = Dir.glob(File.join(root, 'vendor', 'ruby', '*', 'specifications', '*.gemspec')).map do |s_path|
+  spec = Gem::Specification.load(s_path)
+  spec.require_paths.map do |r_path|
+    File.expand_path(
+      File.join(s_path, '..', '..', 'gems', "#{spec.name}-#{spec.version}", r_path)
+    )
+  end
+end
+
+paths += paths = Dir.glob(File.join(root, 'vendor', 'ruby', '*', 'bundler', 'gems', '*', '*.gemspec')).map do |s_path|
+  spec = Gem::Specification.load(s_path)
+  spec.require_paths.map do |r_path|
+    File.expand_path(
+      File.join(File.dirname(s_path), r_path)
+    )
+  end
+end
+
+paths += $LOAD_PATH.find_all{|x| !x.include?('gems')}
+$LOAD_PATH.clear
+paths.compact.flatten.each{|lp| $LOAD_PATH.push(lp)}
+
+load Dir.glob(File.join(root, 'vendor', 'ruby', '*', 'bin', File.basename(__FILE__))).first
