@@ -16,6 +16,7 @@ Packager.build do
     template :generic
     dependencies do
       build [
+        'libpq',
         'libpq-dev'
       ]
       runtime [
@@ -26,8 +27,12 @@ Packager.build do
     commands do
       build [
         'mkdir -p $PKG_DIR/opt/fission/bin',
-        'PATH=$PATH:/opt/chef/embedded/bin gem install --no-ri --no-rdoc bundler',
-        'PATH=$PATH:/opt/chef/embedded/bin bundle install --gemfile=gemfiles/fission-complete --path $PKG_DIR/opt/fission/vendor',
+        'apt-get install python-software-properties',
+        'apt-add-repository ppa:brightbox/ruby-ng',
+        'apt-get update',
+        'apt-get install ruby2.1',
+        'gem install --no-ri --no-rdoc bundler',
+        'bundle install --gemfile=gemfiles/fission-complete --path $PKG_DIR/opt/fission/vendor',
         'cp scripts/runner $PKG_DIR/opt/fission/bin/fission',
         'chmod 0755 $PKG_DIR/opt/fission/bin/fission'
       ]
