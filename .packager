@@ -30,7 +30,7 @@ Packager.build do
         'apt-get install -qy python-software-properties',
         'apt-add-repository -y ppa:brightbox/ruby-ng',
         'apt-get update',
-        'apt-get install -qy ruby2.1',
+        'apt-get install -qy ruby2.1 ruby2.1-dev',
         'gem install --no-ri --no-rdoc bundler',
         'bundle install --gemfile=gemfiles/fission-complete --path $PKG_DIR/opt/fission/vendor',
         'cp scripts/runner $PKG_DIR/opt/fission/bin/fission',
