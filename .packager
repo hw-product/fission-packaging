@@ -9,25 +9,27 @@ Packager.build do
     arch 'amd64'
   end
   dependencies do
-    build [
-      'openjdk-7-jre-headless',
-      'wget',
-      'git'
-    ]
+    runtime ['ruby-interpreter']
   end
   build do
     name 'fission'
     template :generic
+    dependencies do
+      build [
+        'libpq-dev'
+      ]
+      runtime [
+        'libpq',
+        'ruby-interpreter'
+      ]
+    end
     commands do
       build [
-        'wget -O /tmp/jruby.tar.gz https://s3.amazonaws.com/jruby.org/downloads/1.7.18/jruby-bin-1.7.18.tar.gz',
-        'tar -C /tmp -xzf /tmp/jruby.tar.gz',
-        'PATH=/tmp/jruby-1.7.18/bin:$PATH gem install --no-ri --no-rdoc bundler',
-        'PATH=/tmp/jruby-1.7.18/bin:$PATH bundle install',
-        'PATH=/tmp/jruby-1.7.18/bin:$PATH bundle exec make-package build fission --gemfile gemfiles/fission-complete',
-        'mkdir -p $PKG_DIR/opt/fission',
-        'mv package/*.jar $PKG_DIR/opt/fission/fission.jar',
-        'chmod 0644 $PKG_DIR/opt/fission/fission.jar'
+        'bundler install --path vendor',
+        'mkdir -p $PKG_DIR/opt/fission/bin',
+        'mv vendor $PKG_DIR/opt/fission/',
+        'cp scripts/runner $PKG_DIR/opt/fission/bin/fission',
+        'chmod 0755 $PKG_DIR/opt/fission/bin/fission'
       ]
     end
   end
