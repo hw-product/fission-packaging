@@ -25,7 +25,7 @@ Packager.build do
     end
     commands do
       build [
-        'bundle install --gemfile gemfiles/fission --path vendor',
+        'bundle install --gemfile=gemfiles/fission-complete --path vendor',
         'mkdir -p $PKG_DIR/opt/fission/bin',
         'mv vendor $PKG_DIR/opt/fission/',
         'cp scripts/runner $PKG_DIR/opt/fission/bin/fission',
