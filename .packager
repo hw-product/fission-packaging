@@ -16,7 +16,7 @@ Packager.build do
     template :generic
     dependencies do
       build [
-        'libpq',
+        'libpq5',
         'libpq-dev'
       ]
       runtime [
