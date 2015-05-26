@@ -34,6 +34,7 @@ Packager.build do
         'gem install --no-ri --no-rdoc bundler',
         'cp gemfiles/fission-complete ~',
         'sudo -i bundle install --gemfile=fission-complete --path vendor',
+        'rm -rf ~/vendor/ruby/*/cache',
         'mv ~/vendor $PKG_DIR/opt/fission/',
         'cp scripts/runner $PKG_DIR/opt/fission/bin/fission',
         'chmod 0755 $PKG_DIR/opt/fission/bin/fission'
