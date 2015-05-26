@@ -32,7 +32,7 @@ Packager.build do
         'apt-get update',
         'apt-get install -qy ruby2.1 ruby2.1-dev',
         'gem install --no-ri --no-rdoc bundler',
-        'bundle install --gemfile=gemfiles/fission-complete --path $PKG_DIR/opt/fission/vendor',
+        'sudo -i bundle install --gemfile=gemfiles/fission-complete --path $PKG_DIR/opt/fission/vendor',
         'cp scripts/runner $PKG_DIR/opt/fission/bin/fission',
         'chmod 0755 $PKG_DIR/opt/fission/bin/fission'
       ]
