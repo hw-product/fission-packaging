@@ -6,6 +6,7 @@ source 'https://rubygems.org' do
   gem 'carnivore-nsq'
   gem 'carnivore-actor'
   gem 'carnivore-files'
+  gem 'carnivore-rabbitmq'
   gem 'octokit'
 
   gem 'jackal-code-fetcher'
@@ -17,7 +18,7 @@ source 'https://rubygems.org' do
 end
 
 source 'https://fission:8sYl7Bo0ql2OA9OPThUngg@gems.pkgd.io' do
-  gem 'fission'
+  gem 'fission', '0.2.6'
   gem 'fission-assets'
   gem 'fission-data'
   gem 'fission-mail'
