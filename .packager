@@ -31,4 +31,8 @@ Packager.build do
       ]
     end
   end
+  packaging do
+    maintainer 'spox'
+    description 'I make pipelines, yo!'
+  end
 end
