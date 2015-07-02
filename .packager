@@ -32,7 +32,8 @@ Packager.build do
     end
   end
   packaging do
-    maintainer 'spox'
-    description 'I make pipelines, yo!'
+    maintainer 'Heavy Water'
+    description 'Pipeline framework'
+    url 'https://heavywater.io'
   end
 end
