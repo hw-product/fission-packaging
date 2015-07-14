@@ -15,12 +15,14 @@ source 'https://rubygems.org' do
 end
 
 source 'https://fission:8sYl7Bo0ql2OA9OPThUngg@gems.pkgd.io' do
-  gem 'fission', '0.2.18'
+  gem 'fission', '0.2.20'
   gem 'fission-assets'
   gem 'fission-data'
   gem 'fission-mail'
   gem 'fission-nellie'
   gem 'fission-package-builder'
+  gem 'fission-repository-generator'
+  gem 'fission-repository-publisher'
   gem 'fission-router'
   gem 'fission-validator'
   gem 'fission-woodchuck'
