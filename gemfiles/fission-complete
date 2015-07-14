@@ -23,6 +23,7 @@ source 'https://fission:8sYl7Bo0ql2OA9OPThUngg@gems.pkgd.io' do
   gem 'fission-package-builder'
   gem 'fission-repository-generator'
   gem 'fission-repository-publisher'
+  gem 'fission-rest-api'
   gem 'fission-router'
   gem 'fission-validator'
   gem 'fission-woodchuck'
