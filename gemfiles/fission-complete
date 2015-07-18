@@ -12,6 +12,7 @@ source 'https://rubygems.org' do
   gem 'jackal-slack'
   gem 'jackal-commander'
   gem 'jackal-stacks'
+  gem 'jackal-packagecloud'
 end
 
 source 'https://fission:8sYl7Bo0ql2OA9OPThUngg@gems.pkgd.io' do
