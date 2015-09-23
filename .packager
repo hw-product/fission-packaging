@@ -30,7 +30,7 @@ Packager.build do
         'rm -rf ~/vendor/ruby/*/cache',
         'mv ~/vendor $PKG_DIR/usr/local/fission/',
         'cp scripts/runner $PKG_DIR/usr/local/fission/bin/fission',
-        'chmod 0755 $PKG_DIR/usr/local/bin/fission'
+        'chmod 0755 $PKG_DIR/usr/local/fission/bin/fission'
       ]
     end
   end
