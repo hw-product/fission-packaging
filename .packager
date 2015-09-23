@@ -1,43 +1,36 @@
-# -*- mode: ruby -*-
-# -*- encoding: utf-8 -*-
-
 Packager.build do
   target do
     platform 'ubuntu'
-    version '12.04'
+    version '14.04'
     package 'deb'
     arch 'amd64'
   end
   dependencies do
-    runtime ['ruby-interpreter']
+    build [
+      'libpq5',
+      'libpq-dev'
+    ]
+    runtime [
+      'ruby-interpreter'
+    ]
   end
   build do
     name 'fission'
     template :generic
-    dependencies do
-      build [
-        'libpq5',
-        'libpq-dev'
-      ]
-      runtime [
-        'libpq',
-        'ruby-interpreter'
-      ]
-    end
     commands do
       build [
         'mkdir -p $PKG_DIR/opt/fission/bin',
         'apt-get install -qy python-software-properties',
         'apt-add-repository -y ppa:brightbox/ruby-ng',
         'apt-get update',
-        'apt-get install -qy ruby2.1 ruby2.1-dev',
+        'apt-get install -qy ruby2.2 ruby2.2-dev',
         'gem install --no-ri --no-rdoc bundler',
         'cp gemfiles/fission-complete ~',
         'sudo -i bundle install --gemfile=fission-complete --path vendor',
         'rm -rf ~/vendor/ruby/*/cache',
-        'mv ~/vendor $PKG_DIR/opt/fission/',
-        'cp scripts/runner $PKG_DIR/opt/fission/bin/fission',
-        'chmod 0755 $PKG_DIR/opt/fission/bin/fission'
+        'mv ~/vendor $PKG_DIR/usr/local/fission/',
+        'cp scripts/runner $PKG_DIR/usr/local/fission/bin/fission',
+        'chmod 0755 $PKG_DIR/usr/local/bin/fission'
       ]
     end
   end
