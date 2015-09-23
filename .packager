@@ -19,7 +19,7 @@ Packager.build do
     template :generic
     commands do
       build [
-        'mkdir -p $PKG_DIR/opt/fission/bin',
+        'mkdir -p $PKG_DIR/usr/local/fission/bin',
         'apt-get install -qy python-software-properties',
         'apt-add-repository -y ppa:brightbox/ruby-ng',
         'apt-get update',
