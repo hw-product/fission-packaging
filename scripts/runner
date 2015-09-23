@@ -2,7 +2,7 @@
 
 require 'rubygems'
 
-root = File.dirname(__FILE__)
+root = File.dirname(File.dirname(__FILE__))
 paths = Dir.glob(File.join(root, 'vendor', 'ruby', '*', 'specifications', '*.gemspec')).map do |s_path|
   spec = Gem::Specification.load(s_path)
   spec.require_paths.map do |r_path|
@@ -24,5 +24,7 @@ end
 paths += $LOAD_PATH.find_all{|x| !x.include?('gems')}
 $LOAD_PATH.clear
 paths.compact.flatten.each{|lp| $LOAD_PATH.push(lp)}
+
+ENV['GEM_PATH'] = Dir.glob(File.join(root, 'vendor', 'ruby', '*')).first
 
 load Dir.glob(File.join(root, 'vendor', 'ruby', '*', 'bin', File.basename(__FILE__))).first
