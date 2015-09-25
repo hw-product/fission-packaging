@@ -26,7 +26,7 @@ Packager.build do
         'apt-get install -qy ruby2.2 ruby2.2-dev',
         'gem install --no-ri --no-rdoc bundler',
         'cp gemfiles/fission-complete ~',
-        'sudo -i bundle install --gemfile=fission-complete --path vendor',
+        'bundle install --gemfile=fission-complete --path vendor',
         'rm -rf ~/vendor/ruby/*/cache',
         'mv ~/vendor $PKG_DIR/usr/local/fission/',
         'cp scripts/runner $PKG_DIR/usr/local/fission/bin/fission',
