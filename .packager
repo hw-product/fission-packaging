@@ -8,7 +8,8 @@ Packager.build do
   dependencies do
     build [
       'libpq5',
-      'libpq-dev'
+      'libpq-dev',
+      'software-properties-common'
     ]
     runtime [
       'ruby-interpreter'
