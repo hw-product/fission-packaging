@@ -16,7 +16,7 @@ source 'https://rubygems.org' do
 end
 
 source 'https://fission:8sYl7Bo0ql2OA9OPThUngg@gems.pkgd.io' do
-  gem 'fission', '0.3.12'
+  gem 'fission', '0.3.14'
   gem 'fission-assets'
   gem 'fission-data'
   gem 'fission-mail'
