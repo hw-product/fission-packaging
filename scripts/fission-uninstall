@@ -1,0 +1,11 @@
+#!/bin/bash
+
+set -e
+
+id fission
+if [ $? -eq 0 ]; then
+    deluser --system fission
+    delgroup --system --only-if-empty fission
+fi
+
+rm /etc/sv/fission/log/run /etc/sv/fission/run /etc/init.d/fission

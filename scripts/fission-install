@@ -1,0 +1,18 @@
+#!/bin/bash
+
+set -e
+
+id fission
+if [ $? -ne 0 ]; then
+    useradd --system --shell /usr/sbin/nologin --comment "Fission Daemon User" --home-dir /opt/fission --create-home fission
+fi
+
+mkdir -p /etc/fission /etc/sv/fission/log /var/log/fission
+
+echo "#!/bin/sh\nexec svlogd -tt /var/log/fission\n" > /etc/sv/fission/log/run
+chmod 755 /etc/sv/fission/log/run
+
+echo "#!/bin/sh\nexec 2>&1\nexec chpst -u fission:fission /usr/local/fission/bin/fission -c /etc/fission\n" > /etc/sv/fission/run
+chmod 755 /etc/sv/fission/run
+
+ln -s /etc/sv /etc/init.d/fission
