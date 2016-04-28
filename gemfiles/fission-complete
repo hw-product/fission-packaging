@@ -1,6 +1,6 @@
 source 'https://rubygems.org' do
   gem 'carnivore-http'
-#  gem 'carnivore-nsq'
+  gem 'carnivore-sqs'
   gem 'carnivore-actor'
 #  gem 'carnivore-files'
   gem 'carnivore-rabbitmq'
