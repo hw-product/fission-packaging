@@ -12,6 +12,7 @@ Packager.build do
       'software-properties-common'
     ]
     runtime [
+      'runit',
       'ruby-interpreter'
     ]
   end
@@ -33,5 +34,9 @@ Packager.build do
         'chmod 0755 $PKG_DIR/usr/local/fission/bin/fission'
       ]
     end
+  end
+  packaging do
+    after_install 'scripts/fission-install'
+    after_remove 'scripts/fission-uninstall'
   end
 end

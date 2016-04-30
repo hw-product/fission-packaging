@@ -15,6 +15,8 @@ source 'https://rubygems.org' do
   gem 'jackal-packagecloud'
 end
 
+gem 'miasma-lxd', :git => 'https://github.com/miasma-rb/miasma-lxd', :branch => 'develop'
+
 %w(fission fission-assets fission-data fission-mail fission-nellie fission-package-builder
   fission-repository-generator fission-repository-publisher fission-rest-api fission-router
   fission-validator fission-woodchuck fission-woodchuck-filter fission-command-control
