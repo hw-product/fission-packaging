@@ -1,21 +1,21 @@
-source 'https://rubygems.org' do
-  gem 'carnivore-http'
-  gem 'carnivore-sqs'
-  gem 'carnivore-actor'
-#  gem 'carnivore-files'
-  gem 'carnivore-rabbitmq'
-  gem 'octokit'
-
-  gem 'jackal-code-fetcher'
-  gem 'jackal-github'
-  gem 'jackal-github-kit'
-  gem 'jackal-slack'
-  gem 'jackal-commander'
-  gem 'jackal-stacks'
-  gem 'jackal-packagecloud'
-end
+source 'https://rubygems.org'
 
 gem 'miasma-lxd', :git => 'https://github.com/miasma-rb/miasma-lxd', :branch => 'develop'
+
+gem 'carnivore-http'
+gem 'carnivore-sqs'
+gem 'carnivore-actor'
+#  gem 'carnivore-files'
+gem 'carnivore-rabbitmq'
+gem 'octokit'
+
+gem 'jackal-code-fetcher'
+gem 'jackal-github'
+gem 'jackal-github-kit'
+gem 'jackal-slack'
+gem 'jackal-commander'
+gem 'jackal-stacks'
+gem 'jackal-packagecloud'
 
 %w(fission fission-assets fission-data fission-mail fission-nellie fission-package-builder
   fission-repository-generator fission-repository-publisher fission-rest-api fission-router
