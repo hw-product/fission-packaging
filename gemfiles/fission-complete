@@ -1,5 +1,7 @@
 source 'https://rubygems.org'
 
+gem 'json', '1.8.3'
+
 gem 'miasma-lxd', :git => 'https://github.com/miasma-rb/miasma-lxd', :branch => 'develop'
 
 gem 'carnivore-http'
@@ -16,7 +18,6 @@ gem 'jackal-slack'
 gem 'jackal-commander'
 gem 'jackal-stacks'
 gem 'jackal-packagecloud'
-gem 'json'
 
 %w(fission fission-assets fission-data fission-mail fission-nellie fission-package-builder
   fission-repository-generator fission-repository-publisher fission-rest-api fission-router
