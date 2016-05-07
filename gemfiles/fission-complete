@@ -2,6 +2,7 @@ source 'https://rubygems.org'
 
 gem 'miasma-lxd', :git => 'https://github.com/miasma-rb/miasma-lxd', :branch => 'develop'
 gem 'jackal-nellie', :git => 'https://github.com/carnivore-rb/jackal-nellie', :branch => 'develop'
+gem 'jackal-slack', :git => 'https://github.com/carnivore-rb/jackal-slack', :branch => 'develop'
 
 gem 'carnivore-http'
 gem 'carnivore-sqs'
