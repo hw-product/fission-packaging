@@ -16,6 +16,7 @@ gem 'jackal-github'
 gem 'jackal-github-kit'
 gem 'jackal-commander'
 gem 'jackal-stacks', :git => 'https://github.com/carnivore-rb/jackal-stacks', :branch => 'develop'
+gem 'jackal-assets', :git => 'https://github.com/carnivore-rb/jackal-assets', :branch => 'develop'
 gem 'jackal-packagecloud'
 
 %w(fission fission-assets fission-data fission-mail fission-nellie fission-package-builder
